@@ -114,12 +114,12 @@ fastify.get('/login', async (req, reply) => {
   reply
     .setCookie('pkce', verifier, {
       httpOnly: true,
-      secure: false, // true u prod
+      secure: "auto", // true u prod
       sameSite: 'lax'
     })
     .setCookie('state', state, {
       httpOnly: true,
-      secure: false,
+      secure: "auto",
       sameSite: 'lax'
     })
 
@@ -244,14 +244,28 @@ fastify.post('/refresh', async (req, reply) => {
 
 // me
 fastify.get('/me', async (req, reply) => {
-  try {
-    const payload = jwt.verify(
-      req.cookies.access_token,
-      process.env.JWT_ACCESS_SECRET
-    )
+  const token = req.cookies.access_token
 
+  // 1. Provera da li uopšte postoji kolačić
+  if (!token) {
+    return reply.code(401).send({ error: 'unauthorized - missing token' })
+  }
+
+  try {
+    // 2. Verifikacija našeg JWT-a
+    const payload = jwt.verify(token, process.env.JWT_ACCESS_SECRET)
+
+    // 3. Provera da li u msTokenStore mapi postoje Microsoft tokeni za ovog korisnika
+    // (U tvom callback-u si sačuvao pod ključem idToken.oid, što je u našem JWT-u zapravo 'sub')
+    const msTokens = msTokenStore.get(payload.sub)
+
+    if (!msTokens || !msTokens.accessToken) {
+      return reply.code(401).send({ error: 'unauthorized - microsoft session expired or missing' })
+    }
+
+    // Ako je sve u redu, vraćamo podatke o korisniku
     reply.send(payload)
-  } catch {
+  } catch (err) {
     reply.code(401).send({ error: 'unauthorized' })
   }
 })
@@ -320,7 +334,6 @@ fastify.get('/logout', async (req, reply) => {
 })
 
 // start
-
 fastify.listen({
   port: process.env.PORT || 3000,
   host: '0.0.0.0'
