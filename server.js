@@ -1,5 +1,3 @@
-require('dotenv').config()
-
 const Fastify = require('fastify')
 const fastify = Fastify({ logger: true })
 const jwt = require('jsonwebtoken')
@@ -210,8 +208,8 @@ fastify.get('/auth/callback', async (req, reply) => {
   })
 
   reply
-    .setCookie('access_token', accessToken, { httpOnly: true, secure: false, sameSite: 'lax', path: '/' })
-    .setCookie('refresh_token', refreshToken, { httpOnly: true, secure: false, sameSite: 'lax', path: '/' })
+    .setCookie('access_token', accessToken, { httpOnly: true, secure: "auto", sameSite: 'lax', path: '/' })
+    .setCookie('refresh_token', refreshToken, { httpOnly: true, secure: "auto", sameSite: 'lax', path: '/' })
 
     
 
@@ -235,8 +233,8 @@ fastify.post('/refresh', async (req, reply) => {
     const newRefresh = createRefreshToken(session.user)
 
     reply
-      .setCookie('access_token', newAccess, { httpOnly: true, secure: true })
-      .setCookie('refresh_token', newRefresh, { httpOnly: true, secure: true })
+      .setCookie('access_token', newAccess, { httpOnly: true, secure: "auto", sameSite: 'lax', path: '/' })
+      .setCookie('refresh_token', newRefresh, { httpOnly: true, secure: "auto", sameSite: 'lax', path: '/' })
 
     reply.send({ ok: true })
   } catch {
