@@ -5,13 +5,12 @@
   "scripts": {
     "start": "node server.js"
   },
-  "dependencies": {
-    "@fastify/cookie": "^8",
-    "@fastify/static": "^6",
-    "dotenv": "^16",
-    "fastify": "^4",
-    "jsonwebtoken": "^9",
-    "jwks-rsa": "^3",
-    "node-fetch": "^2"
+"dependencies": {
+    "@fastify/cookie": "^9.3.1",
+    "@fastify/static": "^7.0.4",
+    "dotenv": "^16.4.5",
+    "fastify": "^4.28.1",
+    "jsonwebtoken": "^9.0.2",
+    "jwks-rsa": "^3.1.1"
   }
 }

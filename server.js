@@ -2,8 +2,6 @@ require('dotenv').config()
 
 const Fastify = require('fastify')
 const fastify = Fastify({ logger: true })
-
-const fetch = require('node-fetch')
 const jwt = require('jsonwebtoken')
 const crypto = require('crypto')
 const jwksClient = require('jwks-rsa')

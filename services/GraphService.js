@@ -1,5 +1,3 @@
-const fetch = require('node-fetch')
-
 class GraphService {
   constructor({ tenantId, clientId, clientSecret }) {
     this.tenantId = tenantId
