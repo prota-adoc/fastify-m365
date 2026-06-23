@@ -1,0 +1,17 @@
+{
+  "name": "fastify-m365-auth",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^8",
+    "@fastify/static": "^6",
+    "dotenv": "^16",
+    "fastify": "^4",
+    "jsonwebtoken": "^9",
+    "jwks-rsa": "^3",
+    "node-fetch": "^2"
+  }
+}

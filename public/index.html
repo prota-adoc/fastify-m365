@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+</head>
+<body>
+
+<h2 id="status">Niste prijavljeni</h2>
+
+<button onclick="login()">Login</button>
+<button onclick="logout()">Logout</button>
+<button onclick="groups()">Grupe</button>
+
+<pre id="output"></pre>
+
+<script>
+
+function login() {
+  window.location = '/login'
+}
+
+function logout() {
+  window.location = '/logout'
+}
+
+async function check() {
+  const res = await fetch('/me', { credentials: 'include' })
+  if (res.ok) {
+    const user = await res.json()
+    document.getElementById('status').innerText =
+      "✅ Prijavljeni ste: " + user.email
+  }
+}
+
+async function groups() {
+  const res = await fetch('/graph/me/memberOf', { credentials: 'include' })
+  const data = await res.json()
+  document.getElementById('output').innerText =
+    JSON.stringify(data, null, 2)
+}
+
+// silent refresh
+setInterval(() => {
+  fetch('/refresh', { method: 'POST', credentials: 'include' })
+}, 10 * 60 * 1000)
+
+check()
+
+</script>
+
+</body>
+</html>
