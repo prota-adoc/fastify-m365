@@ -1,52 +1,163 @@
 <!DOCTYPE html>
-<html>
+<html lang="sr">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Moderni Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
 
-<h2 id="status">Niste prijavljeni</h2>
+  <main id="logged-out-view" class="hidden flex-1 flex flex-col items-center justify-center p-6 text-center max-w-md mx-auto w-full">
+    <div class="bg-white p-8 rounded-2xl shadow-xl border border-slate-100 w-full">
+      <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+        <i data-lucide="shield-check" class="w-8 h-8"></i>
+      </div>
+      <h1 class="text-2xl font-bold tracking-tight text-slate-900 mb-2">Dobrodošli nazad</h1>
+      <p class="text-slate-500 mb-8 text-sm" id="status-logged-out">Trenutno niste prijavljeni na sistem.</p>
+      
+      <button onclick="login()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-xl transition duration-200 shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 cursor-pointer">
+        <i data-lucide="log-in" class="w-5 h-5"></i>
+        Prijavi se odmah
+      </button>
+    </div>
+  </main>
 
-<button onclick="login()">Login</button>
-<button onclick="logout()">Logout</button>
-<button onclick="groups()">Grupe</button>
+  <div id="logged-in-view" class="hidden flex-1 flex flex-col">
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-10 px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-md">
+          A
+        </div>
+        <div>
+          <h2 class="text-sm font-semibold text-slate-900" id="status-user-email">Korisnik</h2>
+          <span class="text-xs text-emerald-600 flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Aktivan
+          </span>
+        </div>
+      </div>
+      
+      <button onclick="logout()" class="p-2 text-slate-400 hover:text-red-500 rounded-lg hover:bg-slate-100 transition cursor-pointer" title="Odjavi se">
+        <i data-lucide="log-out" class="w-5 h-5"></i>
+      </button>
+    </header>
 
-<pre id="output"></pre>
+    <main class="flex-1 p-4 max-w-4xl mx-auto w-full space-y-6 pb-24 md:pb-6">
+      <section class="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 text-white shadow-xl shadow-blue-500/10">
+        <h3 class="text-xl font-bold mb-1">Pozdrav u Dashboard! 👋</h3>
+        <p class="text-blue-100 text-sm">Upravljajte svojim nlozima i grupama brzo i jednostavno sa mobilnog ili desktop uređaja.</p>
+      </section>
 
-<script>
+      <section class="grid grid-cols-2 gap-4">
+        <button onclick="groups()" class="bg-white border border-slate-200 hover:border-blue-400 p-4 rounded-xl shadow-sm hover:shadow-md transition text-left flex flex-col justify-between gap-4 cursor-pointer group">
+          <div class="p-3 bg-blue-50 text-blue-600 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition w-fit">
+            <i data-lucide="users" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <h4 class="font-semibold text-slate-900 text-sm">Moje Grupe</h4>
+            <p class="text-xs text-slate-400 mt-0.5">Prikaži članstva</p>
+          </div>
+        </button>
 
-function login() {
-  window.location = '/login'
-}
+        <button class="bg-white border border-slate-200 p-4 rounded-xl shadow-sm text-left flex flex-col justify-between gap-4 opacity-60 cursor-not-allowed">
+          <div class="p-3 bg-slate-50 text-slate-500 rounded-xl w-fit">
+            <i data-lucide="settings" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <h4 class="font-semibold text-slate-900 text-sm">Podešavanja</h4>
+            <p class="text-xs text-slate-400 mt-0.5">Uskoro</p>
+          </div>
+        </button>
+      </section>
 
-function logout() {
-  window.location = '/logout'
-}
+      <section id="output-section" class="hidden space-y-2">
+        <h4 class="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+          <i data-lucide="terminal" class="w-4 h-4"></i> Rezultat upita:
+        </h4>
+        <div class="bg-slate-900 text-slate-200 rounded-xl p-4 shadow-inner overflow-hidden">
+          <pre id="output" class="text-xs font-mono max-h-60 overflow-y-auto whitespace-pre-wrap leading-relaxed"></pre>
+        </div>
+      </section>
+    </main>
+  </div>
 
-async function check() {
-  const res = await fetch('/me', { credentials: 'include' })
-  if (res.ok) {
-    const user = await res.json()
-    document.getElementById('status').innerText =
-      "✅ Prijavljeni ste: " + user.email
-  }
-}
+  <script>
+    let isUserLoggedIn = false;
 
-async function groups() {
-  const res = await fetch('/graph/me/memberOf', { credentials: 'include' })
-  const data = await res.json()
-  document.getElementById('output').innerText =
-    JSON.stringify(data, null, 2)
-}
+    // Funkcija koja upravlja vidljivošću elemenata u zavisnosti od stanja
+    function render() {
+      const loggedOutView = document.getElementById('logged-out-view');
+      const loggedInView = document.getElementById('logged-in-view');
 
-// silent refresh
-setInterval(() => {
-  fetch('/refresh', { method: 'POST', credentials: 'include' })
-}, 10 * 60 * 1000)
+      if (isUserLoggedIn) {
+        loggedOutView.classList.add('hidden');
+        loggedInView.classList.remove('hidden');
+      } else {
+        loggedOutView.classList.remove('hidden');
+        loggedInView.classList.add('hidden');
+        document.getElementById('output-section').classList.add('hidden');
+      }
+      
+      // Osveži ikonice nakon što se HTML izmeni/prikaže
+      lucide.createIcons();
+    }
 
-check()
+    function login() {
+      window.location = '/login';
+    }
 
-</script>
+    function logout() {
+      window.location = '/logout';
+    }
+
+    async function check() {
+      try {
+        const res = await fetch('/me', { credentials: 'include' });
+        if (res.ok) {
+          const user = await res.json();
+          document.getElementById('status-user-email').innerText = user.email;
+          isUserLoggedIn = true; 
+        } else {
+          isUserLoggedIn = false;
+        }
+      } catch (err) {
+        console.error("Greška pri verifikaciji:", err);
+        isUserLoggedIn = false;
+      }
+      render(); // Pokreni render nakon provere
+    }
+
+    async function groups() {
+      try {
+        const res = await fetch('/graph/me/memberOf', { credentials: 'include' });
+        const data = await res.json();
+        
+        document.getElementById('output-section').classList.remove('hidden');
+        document.getElementById('output').innerText = JSON.stringify(data, null, 2);
+      } catch (err) {
+        console.error("Greška pri preuzimanju grupa:", err);
+      }
+    }
+
+    // Silent refresh proces
+    setInterval(() => {
+      if (isUserLoggedIn) {
+        fetch('/refresh', { method: 'POST', credentials: 'include' })
+          .then(res => {
+            if (!res.ok) {
+              isUserLoggedIn = false;
+              render();
+              alert("Vaša sesija je istekla. Molimo prijavite se ponovo.");
+            }
+          })
+          .catch(err => console.error("Refresh error:", err));
+      }
+    }, 10 * 60 * 1000);
+
+    // Prvo pokretanje
+    check();
+  </script>
 
 </body>
 </html>
