@@ -45,11 +45,11 @@
 
     <main class="flex-1 p-4 max-w-4xl mx-auto w-full space-y-6 pb-24 md:pb-6">
       <section class="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 text-white shadow-xl shadow-blue-500/10">
-        <h3 class="text-xl font-bold mb-1">Pozdrav u Dashboard! 👋</h3>
-        <p class="text-blue-100 text-sm">Upravljajte svojim nlozima i grupama brzo i jednostavno sa mobilnog ili desktop uređaja.</p>
+        <h3 class="text-xl font-bold mb-1">Dashboard za testiranje! 👋</h3>
+        <p class="text-blue-100 text-sm">Test graph poziva kao korisnik i sistemski za definisane dms sajtove.</p>
       </section>
 
-      <section class="grid grid-cols-4 gap-4">
+      <section class="grid grid-cols-2 md:grid-cols-5 gap-4">
         <button onclick="groups()" class="bg-white border border-slate-200 hover:border-blue-400 p-4 rounded-xl shadow-sm hover:shadow-md transition text-left flex flex-col justify-between gap-4 cursor-pointer group">
           <div class="p-3 bg-blue-50 text-blue-600 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition w-fit">
             <i data-lucide="users" class="w-6 h-6"></i>
@@ -65,8 +65,8 @@
             <i data-lucide="users" class="w-6 h-6"></i>
           </div>
           <div>
-            <h4 class="font-semibold text-slate-900 text-sm">Moji Sajtovi</h4>
-            <p class="text-xs text-slate-400 mt-0.5">Prikaži članstva</p>
+            <h4 class="font-semibold text-slate-900 text-sm">Tenant Sajtovi</h4>
+            <p class="text-xs text-slate-400 mt-0.5">Prikaži spisak sajtova</p>
           </div>
         </button>
 
@@ -76,7 +76,7 @@
           </div>
           <div>
             <h4 class="font-semibold text-slate-900 text-sm">Moji Korisnici</h4>
-            <p class="text-xs text-slate-400 mt-0.5">Prikaži članstva</p>
+            <p class="text-xs text-slate-400 mt-0.5">Korisnike nema prava, nije definisano pravim tokena za korisnika</p>
           </div>
         </button>
         
@@ -86,7 +86,7 @@
           </div>
           <div>
             <h4 class="font-semibold text-slate-900 text-sm">Sajt 0</h4>
-            <p class="text-xs text-slate-400 mt-0.5">Prikaži diskove</p>
+            <p class="text-xs text-slate-400 mt-0.5">Prikaži biblioteka sajta devinisanog u .env</p>
           </div>
         </button>
 
