@@ -5,19 +5,45 @@ class GraphService {
     this.clientSecret = clientSecret
     this.baseUrl = 'https://graph.microsoft.com/v1.0'
   }
+// token aplikacije (app-only) se koristi za pristup resursima bez korisničkog konteksta, dok se token korisnika koristi kada je potrebna interakcija s resursima u ime korisnika.
+async getAppOnlyToken() {
+  const res = await fetch(
+    `https://login.microsoftonline.com/${this.tenantId}/oauth2/v2.0/token`,
+    {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: this.clientId,
+        client_secret: this.clientSecret,
+        scope: 'https://graph.microsoft.com/.default', // OBAVEZNO za app-only
+        grant_type: 'client_credentials'
+      })
+    }
+  )
+  const data = await res.json()
+  return data.access_token
+}
 
-  async request({ path, method = 'GET', query = {}, tokens }) {
-    let { accessToken, refreshToken } = tokens
+async request({ path, method = 'GET', query = {}, tokens, body }) {
+  let { accessToken, refreshToken } = tokens
+  const url = this.buildUrl(path, query)
 
-    const url = this.buildUrl(path, query)
-
-    const call = (token) =>
-      fetch(url, {
+  const call = (token) => {
+      const config = {
         method,
         headers: {
           Authorization: `Bearer ${token}`
         }
-      })
+      }
+
+      // Dodaj body i content-type samo ako body nije null
+      if (body !== null) {
+        config.headers['Content-Type'] = 'application/json'
+        config.body = JSON.stringify(body)
+      }
+
+      return fetch(url, config)
+    }
 
     let res = await call(accessToken)
 
@@ -46,6 +72,10 @@ class GraphService {
       data: await this.parseResponse(res),
       tokens: null
     }
+  }
+
+  async post(path, options) {
+    return this.request({ ...options, path, method: 'POST' })
   }
 
   async refreshToken(refreshToken) {

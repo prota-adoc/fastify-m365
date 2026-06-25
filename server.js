@@ -320,6 +320,109 @@ fastify.get('/graph/*', async (req, reply) => {
     })
   }
 })
+
+fastify.post('/graph/*', async (req, reply) => {
+  try {
+    const user = jwt.verify(req.cookies.access_token, process.env.JWT_ACCESS_SECRET)
+    const tokens = msTokenStore.get(user.sub)
+
+    if (!tokens || !tokens.accessToken || !tokens.refreshToken) {
+      return reply.code(401).send({ error: 'missing ms tokens' })
+    }
+
+    // --- DODATO: Osiguranje da je body objekat ---
+    let bodyToProcess = req.body;
+    if (typeof bodyToProcess === 'string') {
+      try {
+        bodyToProcess = JSON.parse(bodyToProcess);
+      } catch (e) {
+        // Ako nije validan JSON, ostavi ga kao string
+      }
+    }
+    // ---------------------------------------------
+
+    const { data, tokens: newTokens } = await graph.post(req.params['*'], {
+      query: req.query,
+      tokens,
+      body: bodyToProcess // Koristimo parsirani body
+    })
+
+    if (newTokens) msTokenStore.set(user.sub, newTokens)
+    reply.send(data)
+
+  } catch (e) {
+    // ... ostatak logike ostaje isti
+    let parsedGraphError = e.message;
+    try { parsedGraphError = JSON.parse(e.message); } catch (err) {}
+
+    reply.code(400).send({ 
+      error: 'graph error',
+      originalQuery: { path: req.params['*'], query: req.query, body: req.body },
+      graphError: parsedGraphError
+    })
+  }
+})
+
+//sharepoint proxy
+fastify.all('/sharepoint/*', async (req, reply) => {
+  try {
+    // 1. Dobijamo app-only token (možeš dodati i keširanje tokena ovde da ne zoveš MS svaki put)
+    const appOnlyToken = await graph.getAppOnlyToken();
+
+    // 2. Prosleđujemo zahtev koristeći taj token
+    // Napomena: pošto graph.request očekuje 'tokens', moramo prilagoditi poziv
+    const { data } = await graph.request({
+      path: req.params['*'],
+      method: req.method,
+      query: req.query,
+      tokens: { accessToken: appOnlyToken, refreshToken: null }, // refreshToken nije potreban
+      body: req.body
+    });
+
+    reply.send(data);
+  } catch (e) {
+    reply.code(400).send({ error: 'app-only sharepoint error', details: e.message });
+  }
+});
+
+//dms proxy
+fastify.all('/dms/*', async (req, reply) => {
+  try {
+  const appOnlyToken = await graph.getAppOnlyToken();
+    const dmsSites = JSON.parse(process.env.DMS_SITES || '[]');
+    
+    // 1. Dobijamo punu putanju, npr. "0/drives"
+    const fullPath = req.params['*']; 
+    
+    // 2. Delimo putanju na indeks (0) i ostatak (drives)
+    const [index, ...restOfPath] = fullPath.split('/');
+    const siteIndex = parseInt(index);
+
+    // 3. Provera da li indeks postoji
+    if (isNaN(siteIndex) || !dmsSites[siteIndex]) {
+      return reply.code(404).send({ error: 'Sajt nije pronađen' });
+    }
+
+    // 4. Kreiranje nove putanje: 'sites/{siteId}/{ostatak}'
+    // Koristimo encodeURIComponent za siteId jer sadrži zareze
+    const siteId = dmsSites[siteIndex].id;
+    const newPath = `sites/${encodeURIComponent(siteId)}/${restOfPath.join('/')}`;
+    // 2. Prosleđujemo zahtev koristeći taj token
+    // Napomena: pošto graph.request očekuje 'tokens', moramo prilagoditi poziv
+    const { data } = await graph.request({
+      path: newPath,
+      method: req.method,
+      query: req.query,
+      tokens: { accessToken: appOnlyToken, refreshToken: null }, // refreshToken nije potreban
+      body: req.body
+    });
+
+    reply.send(data);
+  } catch (e) {
+    reply.code(400).send({ error: 'app-only sharepoint error', details: e.message });
+  }
+});
+
 // logout
 fastify.get('/logout', async (req, reply) => {
 

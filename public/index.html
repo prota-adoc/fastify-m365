@@ -49,7 +49,7 @@
         <p class="text-blue-100 text-sm">Upravljajte svojim nlozima i grupama brzo i jednostavno sa mobilnog ili desktop uređaja.</p>
       </section>
 
-      <section class="grid grid-cols-2 gap-4">
+      <section class="grid grid-cols-4 gap-4">
         <button onclick="groups()" class="bg-white border border-slate-200 hover:border-blue-400 p-4 rounded-xl shadow-sm hover:shadow-md transition text-left flex flex-col justify-between gap-4 cursor-pointer group">
           <div class="p-3 bg-blue-50 text-blue-600 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition w-fit">
             <i data-lucide="users" class="w-6 h-6"></i>
@@ -67,6 +67,36 @@
           <div>
             <h4 class="font-semibold text-slate-900 text-sm">Moji Sajtovi</h4>
             <p class="text-xs text-slate-400 mt-0.5">Prikaži članstva</p>
+          </div>
+        </button>
+
+        <button onclick="users()" class="bg-white border border-slate-200 hover:border-blue-400 p-4 rounded-xl shadow-sm hover:shadow-md transition text-left flex flex-col justify-between gap-4 cursor-pointer group">
+          <div class="p-3 bg-blue-50 text-blue-600 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition w-fit">
+            <i data-lucide="users" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <h4 class="font-semibold text-slate-900 text-sm">Moji Korisnici</h4>
+            <p class="text-xs text-slate-400 mt-0.5">Prikaži članstva</p>
+          </div>
+        </button>
+        
+        <button onclick="dmsSiteDrives(0)" class="bg-white border border-slate-200 hover:border-blue-400 p-4 rounded-xl shadow-sm hover:shadow-md transition text-left flex flex-col justify-between gap-4 cursor-pointer group">
+          <div class="p-3 bg-blue-50 text-blue-600 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition w-fit">
+            <i data-lucide="users" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <h4 class="font-semibold text-slate-900 text-sm">Sajt 0</h4>
+            <p class="text-xs text-slate-400 mt-0.5">Prikaži diskove</p>
+          </div>
+        </button>
+
+        <button onclick="dmsSiteDrives(1)" class="bg-white border border-slate-200 hover:border-blue-400 p-4 rounded-xl shadow-sm hover:shadow-md transition text-left flex flex-col justify-between gap-4 cursor-pointer group">
+          <div class="p-3 bg-blue-50 text-blue-600 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition w-fit">
+            <i data-lucide="users" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <h4 class="font-semibold text-slate-900 text-sm">Sajt 1</h4>
+            <p class="text-xs text-slate-400 mt-0.5">Nije definisan u .env</p>
           </div>
         </button>
 
@@ -139,8 +169,17 @@
     }
 
     async function groups() {
-      try {
-        const res = await fetch('/graph/me/memberOf', { credentials: 'include' });
+      try { //?$filter=mailEnabled%20eq%20false&securityEnabled%20eq%20true
+//        const res = await fetch('/graph/me/memberOf', { credentials: 'include' });
+        // POST /me/getMemberGroups
+        const res = await fetch('/graph/me/getMemberGroups', {
+          method: 'POST',
+          credentials: 'include'
+          // obaveznoi i ako nema parametara, mora da se posalje body, inace 400
+          ,body: JSON.stringify({
+            securityEnabledOnly: false // ili true, zavisno od tvojih potreba
+          })
+        });
         const data = await res.json();
         
         document.getElementById('output-section').classList.remove('hidden');
@@ -151,13 +190,35 @@
     }
     async function sites() {
       try {
-        const res = await fetch('/graph/sites?$select=siteCollection,webUrl&$filter=siteCollection/root%20ne%20null', { credentials: 'include' });
+        const res = await fetch('/sharepoint/sites?$select=id,displayName,webUrl&$top=999', { credentials: 'include' });
         const data = await res.json();
         
         document.getElementById('output-section').classList.remove('hidden');
         document.getElementById('output').innerText = JSON.stringify(data, null, 2);
       } catch (err) {
         console.error("Greška pri preuzimanju sajtova:", err);
+      }
+    }
+    async function dmsSiteDrives(siteId) {
+      try {
+        const res = await fetch(`/dms/${siteId}/drives`, { credentials: 'include' });
+        const data = await res.json();
+        
+        document.getElementById('output-section').classList.remove('hidden');
+        document.getElementById('output').innerText = JSON.stringify(data, null, 2);
+      } catch (err) {
+        console.error("Greška pri preuzimanju sajtova:", err);
+      }
+    }
+    async function users() {
+      try {
+        const res = await fetch('/graph/users', { credentials: 'include' });
+        const data = await res.json();
+        
+        document.getElementById('output-section').classList.remove('hidden');
+        document.getElementById('output').innerText = JSON.stringify(data, null, 2);
+      } catch (err) {
+        console.error("Greška pri preuzimanju korisnika:", err);
       }
     }
 
