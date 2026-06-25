@@ -270,31 +270,23 @@ fastify.get('/me', async (req, reply) => {
   }
 })
 
+
 //graph proxy
 fastify.get('/graph/*', async (req, reply) => {
   try {
-    jwt.verify(
+    // Optimizovano: jwt.verify je sada pozvan samo jednom
+    const user = jwt.verify(
       req.cookies.access_token,
       process.env.JWT_ACCESS_SECRET
     )
 
-  const user = jwt.verify(
-    req.cookies.access_token,
-    process.env.JWT_ACCESS_SECRET
-  )
+    const tokens = msTokenStore.get(user.sub)
 
-  const tokens = msTokenStore.get(user.sub)
-
-  if (!tokens) {
-    return reply.code(401).send({ error: 'missing ms tokens' })
-  }
-
-    if (!tokens.accessToken || !tokens.refreshToken) {
-      return reply.code(401).send({ error: 'missing tokens' })
+    if (!tokens || !tokens.accessToken || !tokens.refreshToken) {
+      return reply.code(401).send({ error: 'missing ms tokens' })
     }
 
     const path = req.params['*']
-
 
     const { data, tokens: newTokens } = await graph.get(path, {
       query: req.query,
@@ -305,12 +297,27 @@ fastify.get('/graph/*', async (req, reply) => {
       msTokenStore.set(user.sub, newTokens)
     }
 
-
     reply.send(data)
 
   } catch (e) {
     console.error(e.message)
-    reply.code(401).send({ error: 'graph error' })
+
+    // Pokušavamo da parsiramo tekst greške iz GraphService-a nazad u JSON objekat
+    let parsedGraphError = e.message;
+    try {
+      parsedGraphError = JSON.parse(e.message);
+    } catch (parseErr) {
+      // Ako Graph nije vratio JSON, ostavljamo grešku kao sirovi string
+    }
+
+    reply.code(401).send({ 
+      error: 'graph error',
+      originalQuery: {
+        path: req.params['*'],
+        query: req.query
+      },
+      graphError: parsedGraphError
+    })
   }
 })
 // logout
